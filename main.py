@@ -1,52 +1,83 @@
 from datetime import date, time, datetime
 
-# Данные клиента
-client_name = "Цепляев Михаил"
-client_phone = "+7-910-624-33-73"
-client_email = "michael.tseplyaev@yandex.ru"
 
-# Данные столика
-table_number = 7
-table_capacity = 4
-table_location = "У окна"
+def get_client_data():
+    client_name = input("Введите имя клиента: ")
+    client_phone = input("Введите телефон клиента: ")
+    client_email = input("Введите email клиента: ")
+    print()
+    return client_name, client_phone, client_email
 
-# Данные бронирования
-booking_date = date(2026, 9, 20)
-booking_time = time(19, 0)
-persons_count = 3
 
-# Статус
-is_booking_confirmed = False
-booking_status = "Ожидает подтверждения"
+def get_table_data():
+    table_number = int(input("Введите номер столика: "))
+    table_capacity = int(input("Введите вместимость столика: "))
+    table_location = input("Введите расположение столика: ")
+    print()
+    return table_number, table_capacity, table_location
 
-# Проверка вместимости
-is_capacity_enough = persons_count <= table_capacity
 
-# Проверка времени (минимум 2 часа до брони)
-current_datetime = datetime.now()
-booking_datetime = datetime.combine(booking_date, booking_time)
-hours_until_booking = (booking_datetime - current_datetime).total_seconds() / 3600
-is_time_valid = hours_until_booking >= 2
+def get_booking_data():
+    booking_day = int(input("Введите день бронирования: "))
+    booking_month = int(input("Введите месяц бронирования: "))
+    booking_year = int(input("Введите год бронирования: "))
+    booking_hour = int(input("Введите час бронирования (0-23): "))
+    booking_minute = int(input("Введите минуту бронирования: "))
+    persons_count = int(input("Введите количество персон: "))
+    print()
 
-# Проверка даты
-is_date_valid = booking_date >= date.today()
+    booking_date = date(booking_year, booking_month, booking_day)
+    booking_time = time(booking_hour, booking_minute)
+    return booking_date, booking_time, persons_count
 
-# Проверка доступности (имитация)
-is_table_available = True
 
-# Основная логика
-can_book = (is_capacity_enough and
-            is_time_valid and
-            is_date_valid and
-            is_table_available)
+def check_booking_possible(persons_count, table_capacity, booking_date, booking_time):
+    # Проверка вместимости
+    is_capacity_enough = persons_count <= table_capacity
 
+    # Проверка времени (минимум 2 часа)
+    current_datetime = datetime.now()
+    booking_datetime = datetime.combine(booking_date, booking_time)
+    hours_until_booking = (booking_datetime - current_datetime).total_seconds() / 3600
+    is_time_valid = hours_until_booking >= 2
+
+    # Проверка даты
+    is_date_valid = booking_date >= date.today()
+
+    # Проверка доступности (имитация)
+    is_table_available = True
+
+    can_book = (is_capacity_enough and is_time_valid and
+                is_date_valid and is_table_available)
+
+    return can_book, is_capacity_enough, is_time_valid, is_date_valid, is_table_available, hours_until_booking
+
+
+print("=" * 60)
+print("        СИСТЕМА БРОНИРОВАНИЯ СТОЛИКОВ")
+print("=" * 60)
+print()
+
+# Ввод данных
+client_name, client_phone, client_email = get_client_data()
+table_number, table_capacity, table_location = get_table_data()
+booking_date, booking_time, persons_count = get_booking_data()
+
+# Проверка условий
+can_book, is_capacity_enough, is_time_valid, is_date_valid, is_table_available, hours_until_booking = check_booking_possible(
+    persons_count, table_capacity, booking_date, booking_time
+)
+
+# Формирование результата
 if can_book:
     booking_status = "Подтверждено"
     is_booking_confirmed = True
     status_message = "Бронирование успешно создано!"
     confirmation_code = f"BK{table_number}{booking_date.day}{booking_time.hour}"
+    rejection_reasons = []
 else:
     booking_status = "Отклонено"
+    is_booking_confirmed = False
     status_message = "Бронирование невозможно"
     confirmation_code = "НЕ СОЗДАН"
 
@@ -60,9 +91,10 @@ else:
     if not is_table_available:
         rejection_reasons.append("Столик уже забронирован на это время")
 
-# Вывод информации
+# Вывод результатов
+print()
 print("=" * 60)
-print("        СИСТЕМА БРОНИРОВАНИЯ СТОЛИКОВ")
+print("        РЕЗУЛЬТАТ БРОНИРОВАНИЯ")
 print("=" * 60)
 print()
 
@@ -97,7 +129,7 @@ print()
 print(f"{status_message}")
 print()
 
-if not can_book and rejection_reasons:
+if rejection_reasons:
     print("ПРИЧИНЫ ОТКАЗА:")
     print("-" * 40)
     for reason in rejection_reasons:
@@ -112,7 +144,7 @@ if is_booking_confirmed:
     print("ОТМЕНА БРОНИРОВАНИЯ")
     print("-" * 40)
 
-    user_confirmation = "да"  # Имитация ввода
+    user_confirmation = input("Отменить бронирование? (да/нет): ")
     if user_confirmation.lower() in ["да", "yes", "y", "+"]:
         booking_status = "Отменено"
         is_booking_confirmed = False
