@@ -1,155 +1,158 @@
-from datetime import date, time, datetime
-
-
-def get_client_data():
-    client_name = input("Введите имя клиента: ")
-    client_phone = input("Введите телефон клиента: ")
-    client_email = input("Введите email клиента: ")
-    print()
-    return client_name, client_phone, client_email
-
-
-def get_table_data():
-    table_number = int(input("Введите номер столика: "))
-    table_capacity = int(input("Введите вместимость столика: "))
-    table_location = input("Введите расположение столика: ")
-    print()
-    return table_number, table_capacity, table_location
-
-
-def get_booking_data():
-    booking_day = int(input("Введите день бронирования: "))
-    booking_month = int(input("Введите месяц бронирования: "))
-    booking_year = int(input("Введите год бронирования: "))
-    booking_hour = int(input("Введите час бронирования (0-23): "))
-    booking_minute = int(input("Введите минуту бронирования: "))
-    persons_count = int(input("Введите количество персон: "))
-    print()
-
-    booking_date = date(booking_year, booking_month, booking_day)
-    booking_time = time(booking_hour, booking_minute)
-    return booking_date, booking_time, persons_count
-
-
-def check_booking_possible(persons_count, table_capacity, booking_date, booking_time):
-    # Проверка вместимости
-    is_capacity_enough = persons_count <= table_capacity
-
-    # Проверка времени (минимум 2 часа)
-    current_datetime = datetime.now()
-    booking_datetime = datetime.combine(booking_date, booking_time)
-    hours_until_booking = (booking_datetime - current_datetime).total_seconds() / 3600
-    is_time_valid = hours_until_booking >= 2
-
-    # Проверка даты
-    is_date_valid = booking_date >= date.today()
-
-    # Проверка доступности (имитация)
-    is_table_available = True
-
-    can_book = (is_capacity_enough and is_time_valid and
-                is_date_valid and is_table_available)
-
-    return can_book, is_capacity_enough, is_time_valid, is_date_valid, is_table_available, hours_until_booking
-
-
-print("=" * 60)
-print("        СИСТЕМА БРОНИРОВАНИЯ СТОЛИКОВ")
-print("=" * 60)
-print()
-
-# Ввод данных
-client_name, client_phone, client_email = get_client_data()
-table_number, table_capacity, table_location = get_table_data()
-booking_date, booking_time, persons_count = get_booking_data()
-
-# Проверка условий
-can_book, is_capacity_enough, is_time_valid, is_date_valid, is_table_available, hours_until_booking = check_booking_possible(
-    persons_count, table_capacity, booking_date, booking_time
+from tables import (
+    add_table,
+    find_table,
+    check_capacity,
+    sort_tables,
 )
+from bookings import (
+    is_table_available,
+    create_booking,
+    cancel_booking,
+    get_booking_status,
+)
+from storage import (
+    load_tables,
+    save_tables,
+    load_bookings,
+    save_bookings,
+)
+from utils import input_int, input_date, input_str
 
-# Формирование результата
-if can_book:
-    booking_status = "Подтверждено"
-    is_booking_confirmed = True
-    status_message = "Бронирование успешно создано!"
-    confirmation_code = f"BK{table_number}{booking_date.day}{booking_time.hour}"
-    rejection_reasons = []
-else:
-    booking_status = "Отклонено"
-    is_booking_confirmed = False
-    status_message = "Бронирование невозможно"
-    confirmation_code = "НЕ СОЗДАН"
+TABLES_FILE = "data/tables.json"
+BOOKINGS_FILE = "data/bookings.json"
 
-    rejection_reasons = []
-    if not is_capacity_enough:
-        rejection_reasons.append(f"Столик рассчитан на {table_capacity} человек, а требуется {persons_count}")
-    if not is_time_valid:
-        rejection_reasons.append(f"До бронирования осталось {int(hours_until_booking)} часов. Требуется минимум 2 часа")
-    if not is_date_valid:
-        rejection_reasons.append("Дата бронирования не может быть раньше сегодняшнего дня")
-    if not is_table_available:
-        rejection_reasons.append("Столик уже забронирован на это время")
 
-# Вывод результатов
-print()
-print("=" * 60)
-print("        РЕЗУЛЬТАТ БРОНИРОВАНИЯ")
-print("=" * 60)
-print()
+def show_tables(tables: dict[int, dict]) -> None:
+    """Вывести список столиков."""
+    if not tables:
+        print("Список столиков пуст.")
+        return
 
-print("ИНФОРМАЦИЯ О БРОНИРОВАНИИ")
-print("-" * 40)
-print(f"Клиент:          {client_name}")
-print(f"Телефон:         {client_phone}")
-print(f"Email:           {client_email}")
-print()
-print(f"Столик:          N{table_number}")
-print(f"Вместимость:     {table_capacity} человек")
-print(f"Расположение:    {table_location}")
-print()
-print(f"Дата:            {booking_date.strftime('%d.%m.%Y')}")
-print(f"Время:           {booking_time.strftime('%H:%M')}")
-print(f"Количество персон: {persons_count}")
-print()
+    print("\nСтолики ресторана:")
+    print("-" * 50)
+    for table in sort_tables(tables):
+        print(
+            f"  N{table['number']:>3} | "
+            f"{table['capacity']} мест | {table['location']}"
+        )
+    print("-" * 50)
 
-print("ПРОВЕРКА УСЛОВИЙ")
-print("-" * 40)
-print(f"  Вместимость достаточна:    {'ДА' if is_capacity_enough else 'НЕТ'}")
-print(f"  Минимум 2 часа до брони:   {'ДА' if is_time_valid else 'НЕТ'}")
-print(f"  Дата не раньше сегодня:    {'ДА' if is_date_valid else 'НЕТ'}")
-print(f"  Столик свободен:           {'ДА' if is_table_available else 'НЕТ'}")
-print()
 
-print("РЕЗУЛЬТАТ")
-print("-" * 40)
-print(f"Статус:          {booking_status}")
-print(f"Код бронирования: {confirmation_code}")
-print()
-print(f"{status_message}")
-print()
+def show_bookings(bookings: list[dict]) -> None:
+    """Вывести список бронирований."""
+    if not bookings:
+        print("Бронирований пока нет.")
+        return
 
-if rejection_reasons:
-    print("ПРИЧИНЫ ОТКАЗА:")
-    print("-" * 40)
-    for reason in rejection_reasons:
-        print(f"  - {reason}")
+    print("\nБронирования:")
+    print("-" * 70)
+    for booking in bookings:
+        print(
+            f"  #{booking['id']:<3} | "
+            f"Столик N{booking['table_number']:<3} | "
+            f"{booking['date']} | "
+            f"{booking['client_name']:<20} | "
+            f"{booking['status']}"
+        )
+    print("-" * 70)
 
-print()
-print("=" * 60)
 
-# Отмена бронирования
-if is_booking_confirmed:
-    print()
-    print("ОТМЕНА БРОНИРОВАНИЯ")
-    print("-" * 40)
+def menu() -> None:
+    """Главное меню приложения."""
+    print("\n" + "=" * 60)
+    print("        СИСТЕМА БРОНИРОВАНИЯ СТОЛИКОВ")
+    print("=" * 60)
+    print("1. Показать столики")
+    print("2. Найти столик по расположению")
+    print("3. Проверить вместимость столика")
+    print("4. Проверить доступность на дату")
+    print("5. Забронировать столик")
+    print("6. Отменить бронирование")
+    print("7. Показать бронирования")
+    print("0. Выход")
 
-    user_confirmation = input("Отменить бронирование? (да/нет): ")
-    if user_confirmation.lower() in ["да", "yes", "y", "+"]:
-        booking_status = "Отменено"
-        is_booking_confirmed = False
-        print("Бронирование успешно отменено")
-    else:
-        print("Бронирование остаётся активным")
 
-    print(f"Текущий статус: {booking_status}")
+def main() -> None:
+    """Запуск приложения."""
+    tables = load_tables(TABLES_FILE)
+    bookings = load_bookings(BOOKINGS_FILE)
+
+    # Если данных ещё нет — добавляем стартовые столики
+    if not tables:
+        add_table(tables, 1, 2, "У окна")
+        add_table(tables, 2, 4, "В центре зала")
+        add_table(tables, 3, 4, "У окна")
+        add_table(tables, 4, 6, "В центре зала")
+        add_table(tables, 5, 8, "Отдельный кабинет")
+        save_tables(TABLES_FILE, tables)
+
+    while True:
+        menu()
+        choice = input_int("\nВыберите действие: ")
+
+        if choice == 0:
+            save_tables(TABLES_FILE, tables)
+            save_bookings(BOOKINGS_FILE, bookings)
+            print("Данные сохранены. До свидания!")
+            break
+
+        if choice == 1:
+            show_tables(tables)
+
+        elif choice == 2:
+            query = input_str("Подстрока расположения: ")
+            found = find_table(tables, query)
+            if found:
+                for table in found:
+                    print(
+                        f"  N{table['number']} | "
+                        f"{table['capacity']} мест | "
+                        f"{table['location']}"
+                    )
+            else:
+                print("Столики не найдены.")
+
+        elif choice == 3:
+            number = input_int("Номер столика: ")
+            min_capacity = input_int("Минимальная вместимость: ")
+            if check_capacity(tables, number, min_capacity):
+                print("Вместимость достаточна.")
+            else:
+                print("Вместимость недостаточна.")
+
+        elif choice == 4:
+            number = input_int("Номер столика: ")
+            booking_date = input_date("Дата (ДД.ММ.ГГГГ): ")
+            available = is_table_available(bookings, number, booking_date)
+            print(get_booking_status(available))
+
+        elif choice == 5:
+            number = input_int("Номер столика: ")
+            booking_date = input_date("Дата (ДД.ММ.ГГГГ): ")
+            client_name = input_str("Имя клиента: ")
+            booking = create_booking(
+                bookings, number, booking_date, client_name
+            )
+            if booking:
+                print(f"Бронирование #{booking['id']} успешно создано!")
+                save_bookings(BOOKINGS_FILE, bookings)
+            else:
+                print("Столик уже забронирован на эту дату.")
+
+        elif choice == 6:
+            booking_id = input_int("Номер бронирования: ")
+            if cancel_booking(bookings, booking_id):
+                print("Бронирование отменено.")
+                save_bookings(BOOKINGS_FILE, bookings)
+            else:
+                print("Бронирование не найдено или уже отменено.")
+
+        elif choice == 7:
+            show_bookings(bookings)
+
+        else:
+            print("Неизвестная команда.")
+
+
+if __name__ == "__main__":
+    main()
