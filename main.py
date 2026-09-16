@@ -23,7 +23,6 @@ BOOKINGS_FILE = "data/bookings.json"
 
 
 def show_tables(tables: dict[int, dict]) -> None:
-    """Вывести список столиков."""
     if not tables:
         print("Список столиков пуст.")
         return
@@ -39,7 +38,6 @@ def show_tables(tables: dict[int, dict]) -> None:
 
 
 def show_bookings(bookings: list[dict]) -> None:
-    """Вывести список бронирований."""
     if not bookings:
         print("Бронирований пока нет.")
         return
@@ -58,7 +56,6 @@ def show_bookings(bookings: list[dict]) -> None:
 
 
 def menu() -> None:
-    """Главное меню приложения."""
     print("\n" + "=" * 60)
     print("        СИСТЕМА БРОНИРОВАНИЯ СТОЛИКОВ")
     print("=" * 60)
