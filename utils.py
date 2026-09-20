@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 
 
 def input_int(prompt: str) -> int:
@@ -9,11 +9,12 @@ def input_int(prompt: str) -> int:
             print("Ошибка: введите целое число.")
 
 
-def input_date(prompt: str) -> date:
+def input_date(prompt: str) -> str:
     while True:
         try:
             value = input(prompt)
-            return datetime.strptime(value, "%d.%m.%Y").date()
+            parsed = datetime.strptime(value, "%d.%m.%Y").date()
+            return parsed.isoformat()
         except ValueError:
             print("Ошибка: неверный формат даты. Используйте ДД.ММ.ГГГГ.")
 
