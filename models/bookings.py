@@ -32,6 +32,17 @@ class Booking:
         )
 
 
+def find_booking_by_id(
+    bookings: list[Booking],
+    booking_id: int,
+) -> Optional[Booking]:
+    """Найти бронирование по идентификатору."""
+    for booking in bookings:
+        if booking.id == booking_id:
+            return booking
+    return None
+
+
 def is_table_available(
     bookings: list[Booking],
     table: Table,

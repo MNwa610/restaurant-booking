@@ -2,6 +2,7 @@ from models import Booking, Table, User
 from models.bookings import (
     cancel_booking,
     create_booking,
+    find_booking_by_id,
     is_table_available,
 )
 
@@ -71,3 +72,13 @@ def test_cancelled_booking_unlocks_table():
 def test_cancel_booking_returns_false():
     bookings = []
     assert cancel_booking(bookings, 999) is False
+
+
+def test_find_booking_by_id():
+    bookings = []
+    table = make_table()
+    user = make_user()
+    created = create_booking(bookings, table, "2026-09-20", user)
+    found = find_booking_by_id(bookings, created.id)
+    assert found is created
+    assert find_booking_by_id(bookings, 999) is None

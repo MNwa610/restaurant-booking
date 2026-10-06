@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "table_number": 1,
+    "booking_date": "2026-10-06",
+    "user_id": 1,
+    "is_cancelled": false
+  },
+  {
+    "id": 2,
+    "table_number": 5,
+    "booking_date": "2026-10-10",
+    "user_id": 2,
+    "is_cancelled": false
+  },
+  {
+    "id": 3,
+    "table_number": 2,
+    "booking_date": "2026-09-01",
+    "user_id": 1,
+    "is_cancelled": true
+  }
+]
