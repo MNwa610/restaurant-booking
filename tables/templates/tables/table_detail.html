@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if table %}
+Столик N{{ table.number }} – бронирование столиков
+{% else %}
+Столик не найден – бронирование столиков
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if table %}
+<div class="card">
+<div class="card-body">
+<h1 class="card-title">
+Столик N{{ table.number }}
+</h1>
+<p class="card-text">
+<strong>Номер:</strong> {{ table.number }}
+</p>
+<p class="card-text">
+<strong>Вместимость:</strong>
+{{ table.capacity }} мест
+</p>
+<p class="card-text">
+<strong>Расположение:</strong>
+{{ table.location|default:"Не указано" }}
+</p>
+<p class="card-text">
+Доступность на текущую дату:
+{% if available %}
+<span class="badge bg-success">доступен</span>
+{% else %}
+<span class="badge bg-danger">занят</span>
+{% endif %}
+</p>
+</div>
+</div>
+{% else %}
+<h1 class="text-danger">
+Столик не найден
+</h1>
+<p>
+Столик с указанным номером отсутствует.
+</p>
+{% endif %}
+<a
+href="{% url 'tables:list' %}"
+class="btn btn-outline-secondary mt-3"
+>
+← к списку столиков
+</a>
+{% endblock %}

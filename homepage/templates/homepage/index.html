@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}
+Главная – бронирование столиков
+{% endblock %}
+
+{% block content %}
+<h1 class="display-4">Система бронирования столиков</h1>
+<p class="lead">
+Веб-интерфейс учёта столиков ресторана и бронирований.
+</p>
+<p>Основные разделы:</p>
+<a href="{% url 'tables:list' %}" class="btn btn-primary me-2">
+Столики
+</a>
+<a href="{% url 'bookings:bookings' %}" class="btn btn-secondary">
+Бронирования
+</a>
+{% endblock %}

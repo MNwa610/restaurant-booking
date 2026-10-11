@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}
+Столики – бронирование столиков
+{% endblock %}
+
+{% block content %}
+<h1>Столики</h1>
+<p>
+Всего столиков: {{ tables|length }}
+</p>
+{% for table in tables %}
+{% include "tables/includes/table_card.html" %}
+{% empty %}
+<p>Столики не найдены.</p>
+{% endfor %}
+{% endblock %}

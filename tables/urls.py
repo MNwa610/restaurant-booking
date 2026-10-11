@@ -2,7 +2,9 @@ from django.urls import path
 
 from . import views
 
+app_name = "tables"
+
 urlpatterns = [
-    path("", views.tables, name="tables"),
-    path("<int:table_number>/", views.table_detail, name="table_detail"),
+    path("", views.tables, name="list"),
+    path("<int:table_number>/", views.table_detail, name="detail"),
 ]

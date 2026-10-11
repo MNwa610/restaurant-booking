@@ -1,0 +1,19 @@
+<article class="card table-card mb-3">
+<div class="card-body">
+<h2 class="card-title">
+Столик N{{ table.number|default:"Без номера" }}
+</h2>
+<p class="card-text">
+Вместимость: {{ table.capacity }} мест
+</p>
+<p class="card-text">
+Расположение: {{ table.location|default:"Не указано" }}
+</p>
+<a
+href="{% url 'tables:detail' table.number %}"
+class="btn btn-primary"
+>
+Подробнее
+</a>
+</div>
+</article>
