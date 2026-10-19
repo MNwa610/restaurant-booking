@@ -6,5 +6,6 @@ app_name = "tables"
 
 urlpatterns = [
     path("", views.tables, name="list"),
+    path("available/", views.available_tables, name="available"),
     path("<int:table_number>/", views.table_detail, name="detail"),
 ]

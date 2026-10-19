@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}
+Свободные столики – бронирование столиков
+{% endblock %}
+
+{% block content %}
+<h1>Свободные столики</h1>
+<form method="get">
+<label for="date">Дата:</label>
+<input
+type="date"
+id="date"
+name="date"
+value="{{ booking_date }}"
+>
+<button type="submit">Найти</button>
+</form>
+{% if booking_date %}
+<h2>Дата: {{ booking_date }}</h2>
+{% for table in tables %}
+<article class="table-card">
+<h3>Столик N{{ table.number }}</h3>
+<p>Вместимость: {{ table.capacity }} мест</p>
+<p>Расположение: {{ table.location|default:"Не указано" }}</p>
+</article>
+{% empty %}
+<p>На выбранную дату свободных столиков нет.</p>
+{% endfor %}
+{% endif %}
+{% endblock %}

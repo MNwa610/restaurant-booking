@@ -17,7 +17,7 @@
 </h1>
 <p class="card-text">
 <strong>Столик:</strong>
-N{{ booking.table.number }}
+N{{ booking.table_number }}
 </p>
 <p class="card-text">
 <strong>Дата:</strong>
@@ -25,7 +25,7 @@ N{{ booking.table.number }}
 </p>
 <p class="card-text">
 <strong>Пользователь:</strong>
-{{ booking.user.name|default:"Без имени" }}
+{{ booking.user_name|default:"Без имени" }}
 </p>
 <p class="card-text">
 <strong>Статус:</strong>

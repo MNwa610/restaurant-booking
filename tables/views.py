@@ -1,50 +1,105 @@
+import sqlite3
 from datetime import date
 
 from django.shortcuts import render
 
-from models.bookings import is_table_available
-from models.tables import find_table_by_number
-from storage import load_bookings, load_tables, load_users
+DB_PATH = "data/restaurant_booking.sqlite"
 
 
 def tables(request):
-    tables_list = load_tables("data/tables.json")
-    context = {
-        "tables": tables_list,
-    }
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    tables_list = conn.execute(
+        """
+        SELECT
+            number,
+            capacity,
+            location
+        FROM tables
+        ORDER BY number;
+        """
+    ).fetchall()
+    conn.close()
     return render(
         request,
         "tables/table_list.html",
-        context,
+        {"tables": tables_list},
     )
 
 
 def table_detail(request, table_number):
-    tables_list = load_tables("data/tables.json")
-    table = find_table_by_number(
-        tables_list,
-        table_number,
-    )
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    table = conn.execute(
+        """
+        SELECT
+            number,
+            capacity,
+            location
+        FROM tables
+        WHERE number = ?;
+        """,
+        [table_number],
+    ).fetchone()
     available = False
     if table is not None:
-        users_list = load_users("data/users.json")
-        bookings_list = load_bookings(
-            "data/bookings.json",
-            tables_list,
-            users_list,
-        )
-        available = is_table_available(
-            bookings_list,
-            table,
-            date.today().isoformat(),
-        )
-    context = {
-        "table": table,
-        "available": available,
-    }
+        free_table = conn.execute(
+            """
+            SELECT
+                tables.number
+            FROM tables
+            WHERE tables.number = ?
+                AND tables.number NOT IN (
+                    SELECT bookings.table_number
+                    FROM bookings
+                    WHERE bookings.booking_date = ?
+                        AND bookings.is_cancelled = 0
+                );
+            """,
+            [table_number, date.today().isoformat()],
+        ).fetchone()
+        available = free_table is not None
+    conn.close()
     return render(
         request,
         "tables/table_detail.html",
-        context,
+        {
+            "table": table,
+            "available": available,
+        },
         status=404 if table is None else 200,
+    )
+
+
+def available_tables(request):
+    booking_date = request.GET.get("date")
+    tables_list = []
+    if booking_date:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        tables_list = conn.execute(
+            """
+            SELECT
+                tables.number,
+                tables.capacity,
+                tables.location
+            FROM tables
+            WHERE tables.number NOT IN (
+                SELECT bookings.table_number
+                FROM bookings
+                WHERE bookings.booking_date = ?
+                    AND bookings.is_cancelled = 0
+            )
+            ORDER BY tables.number;
+            """,
+            [booking_date],
+        ).fetchall()
+        conn.close()
+    return render(
+        request,
+        "tables/available.html",
+        {
+            "tables": tables_list,
+            "booking_date": booking_date,
+        },
     )

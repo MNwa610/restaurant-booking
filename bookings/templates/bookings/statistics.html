@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}
+Статистика – бронирование столиков
+{% endblock %}
+
+{% block content %}
+<h1>Статистика бронирований</h1>
+{% for item in statistics %}
+<article class="statistics-item">
+<h2>Столик N{{ item.table_number }}</h2>
+<p>Количество бронирований: {{ item.bookings_count }}</p>
+</article>
+{% empty %}
+<p>Данные отсутствуют.</p>
+{% endfor %}
+{% endblock %}
