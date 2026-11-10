@@ -1,1 +1,10 @@
-# Register your models here.
+from django.contrib import admin
+
+from .models import Table
+
+
+@admin.register(Table)
+class TableAdmin(admin.ModelAdmin):
+    list_display = ("number", "capacity", "location")
+    search_fields = ("location",)
+    ordering = ("number",)

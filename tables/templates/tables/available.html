@@ -16,7 +16,10 @@ value="{{ booking_date }}"
 >
 <button type="submit">Найти</button>
 </form>
-{% if booking_date %}
+{% if date_error %}
+<p>Указана некорректная дата. Проверьте формат YYYY-MM-DD.</p>
+{% endif %}
+{% if booking_date and not date_error %}
 <h2>Дата: {{ booking_date }}</h2>
 {% for table in tables %}
 <article class="table-card">

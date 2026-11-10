@@ -1,65 +1,78 @@
-import sqlite3
 from datetime import date
 
-from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, render
 
-DB_PATH = "data/restaurant_booking.sqlite"
+from tables.models import Table
+
+TABLES_PER_PAGE = 2
+
+TABLE_SORT_FIELDS = {
+    "number": "number",
+    "capacity": "capacity",
+    "location": "location",
+}
+
+
+def parse_date(value):
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def tables(request):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    tables_list = conn.execute(
-        """
-        SELECT
-            number,
-            capacity,
-            location
-        FROM tables
-        ORDER BY number;
-        """
-    ).fetchall()
-    conn.close()
+    queryset = Table.objects.all()
+    location = request.GET.get("location", "").strip()
+    query = request.GET.get("q", "").strip()
+    capacity = request.GET.get("capacity", "").strip()
+    sort = request.GET.get("sort", "number")
+
+    if location:
+        queryset = queryset.filter(location__iexact=location)
+    if query:
+        queryset = queryset.filter(location__icontains=query)
+    if capacity.isdigit():
+        queryset = queryset.filter(capacity__gte=int(capacity))
+
+    order_by = TABLE_SORT_FIELDS.get(sort, "number")
+    queryset = queryset.order_by(order_by, "number")
+
+    locations = (
+        Table.objects.order_by("location")
+        .values_list("location", flat=True)
+        .distinct()
+    )
+    paginator = Paginator(queryset, TABLES_PER_PAGE)
+    page_obj = paginator.get_page(request.GET.get("page"))
     return render(
         request,
         "tables/table_list.html",
-        {"tables": tables_list},
+        {
+            "tables": page_obj,
+            "page_obj": page_obj,
+            "locations": locations,
+            "location": location,
+            "q": query,
+            "capacity": capacity,
+            "sort": sort,
+        },
     )
 
 
 def table_detail(request, table_number):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    table = conn.execute(
-        """
-        SELECT
-            number,
-            capacity,
-            location
-        FROM tables
-        WHERE number = ?;
-        """,
-        [table_number],
-    ).fetchone()
-    available = False
-    if table is not None:
-        free_table = conn.execute(
-            """
-            SELECT
-                tables.number
-            FROM tables
-            WHERE tables.number = ?
-                AND tables.number NOT IN (
-                    SELECT bookings.table_number
-                    FROM bookings
-                    WHERE bookings.booking_date = ?
-                        AND bookings.is_cancelled = 0
-                );
-            """,
-            [table_number, date.today().isoformat()],
-        ).fetchone()
-        available = free_table is not None
-    conn.close()
+    table = get_object_or_404(Table, pk=table_number)
+    today = date.today()
+    available = (
+        Table.objects.filter(pk=table.number)
+        .exclude(
+            bookings__booking_date=today,
+            bookings__is_cancelled=False,
+        )
+        .exists()
+    )
     return render(
         request,
         "tables/table_detail.html",
@@ -67,39 +80,29 @@ def table_detail(request, table_number):
             "table": table,
             "available": available,
         },
-        status=404 if table is None else 200,
     )
 
 
 def available_tables(request):
-    booking_date = request.GET.get("date")
-    tables_list = []
+    date_input = request.GET.get("date", "").strip()
+    booking_date = parse_date(date_input)
+    date_error = bool(date_input) and booking_date is None
+    tables_list = Table.objects.none()
     if booking_date:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        tables_list = conn.execute(
-            """
-            SELECT
-                tables.number,
-                tables.capacity,
-                tables.location
-            FROM tables
-            WHERE tables.number NOT IN (
-                SELECT bookings.table_number
-                FROM bookings
-                WHERE bookings.booking_date = ?
-                    AND bookings.is_cancelled = 0
+        tables_list = (
+            Table.objects.exclude(
+                bookings__booking_date=booking_date,
+                bookings__is_cancelled=False,
             )
-            ORDER BY tables.number;
-            """,
-            [booking_date],
-        ).fetchall()
-        conn.close()
+            .distinct()
+            .order_by("number")
+        )
     return render(
         request,
         "tables/available.html",
         {
             "tables": tables_list,
-            "booking_date": booking_date,
+            "booking_date": date_input if booking_date else date_input,
+            "date_error": date_error,
         },
     )
