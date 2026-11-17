@@ -9,6 +9,9 @@
 <p class="card-text">
 Расположение: {{ table.location|default:"Не указано" }}
 </p>
+<p class="card-text">
+Активных бронирований: {{ table.active_bookings|length }}
+</p>
 <a
 href="{% url 'tables:detail' table.number %}"
 class="btn btn-primary"

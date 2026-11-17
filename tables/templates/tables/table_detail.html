@@ -34,6 +34,16 @@
 <span class="badge bg-danger">занят</span>
 {% endif %}
 </p>
+<h2 class="h5 mt-3">Бронирования</h2>
+{% for booking in table.bookings.all %}
+<p>
+{{ booking.booking_date }} —
+{{ booking.user.name }} —
+{% if booking.is_cancelled %}отменено{% else %}активно{% endif %}
+</p>
+{% empty %}
+<p>Бронирований нет.</p>
+{% endfor %}
 </div>
 </div>
 {% else %}

@@ -6,6 +6,18 @@
 
 {% block content %}
 <h1>Статистика бронирований</h1>
+<p>Всего бронирований: {{ summary.total }}</p>
+<p>Отменённых бронирований: {{ summary.cancelled }}</p>
+<p>Столиков: {{ capacity_stats.tables_count }}</p>
+<p>Суммарная вместимость: {{ capacity_stats.sum_capacity }}</p>
+<p>Средняя вместимость: {{ capacity_stats.avg_capacity }}</p>
+<p>Минимальная вместимость: {{ capacity_stats.min_capacity }}</p>
+<p>Максимальная вместимость: {{ capacity_stats.max_capacity }}</p>
+{% for item in locations %}
+<p>
+{{ item.location }}: {{ item.tables_count }} столик(ов)
+</p>
+{% endfor %}
 {% for item in statistics %}
 <article class="statistics-item">
 <h2>Столик N{{ item.table_number }}</h2>
