@@ -2,7 +2,7 @@ from datetime import date
 
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from bookings.models import Booking
 from tables.models import Table
@@ -26,16 +26,11 @@ def parse_date(value):
 
 
 def occupied_table_ids(booking_date):
-    return Booking.objects.filter(
-        booking_date=booking_date,
-        is_cancelled=False,
-    ).values("table_id")
+    return Booking.objects.occupied_on(booking_date)
 
 
 def tables(request):
-    active_bookings = Booking.objects.filter(
-        is_cancelled=False,
-    ).select_related("user")
+    active_bookings = Booking.objects.active().select_related("user")
     queryset = Table.objects.prefetch_related(
         Prefetch(
             "bookings",
@@ -80,7 +75,12 @@ def tables(request):
     )
 
 
-def table_detail(request, table_number):
+def table_detail_redirect(request, table_number):
+    table = get_object_or_404(Table, pk=table_number)
+    return redirect(table.get_absolute_url())
+
+
+def table_detail(request, slug):
     booking_history = Booking.objects.select_related("user").order_by(
         "-booking_date",
         "-id",
@@ -89,7 +89,7 @@ def table_detail(request, table_number):
         Table.objects.prefetch_related(
             Prefetch("bookings", queryset=booking_history),
         ),
-        pk=table_number,
+        slug=slug,
     )
     today = date.today()
     available = (

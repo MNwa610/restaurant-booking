@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import CharField, Value
+from django.db.models.functions import Cast, Concat
 
 from tables.models import Table, TimeStampedModel
 
@@ -21,6 +23,49 @@ class User(TimeStampedModel):
         return f"{self.name} <{self.email}>"
 
 
+class BookingStatus(models.TextChoices):
+    ACTIVE = "active", "Активно"
+    CANCELLED = "cancelled", "Отменено"
+    COMPLETED = "completed", "Завершено"
+
+
+class BookingQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(status=BookingStatus.ACTIVE)
+
+    def cancelled(self):
+        return self.filter(status=BookingStatus.CANCELLED)
+
+    def for_date(self, booking_date):
+        return self.filter(booking_date=booking_date)
+
+    def occupied_on(self, booking_date):
+        return self.filter(
+            booking_date=booking_date,
+            status__in=(
+                BookingStatus.ACTIVE,
+                BookingStatus.COMPLETED,
+            ),
+        ).values("table_id")
+
+
+class BookingManager(models.Manager):
+    def get_queryset(self):
+        return BookingQuerySet(self.model, using=self._db)
+
+    def active(self):
+        return self.get_queryset().active()
+
+    def cancelled(self):
+        return self.get_queryset().cancelled()
+
+    def for_date(self, booking_date):
+        return self.get_queryset().for_date(booking_date)
+
+    def occupied_on(self, booking_date):
+        return self.get_queryset().occupied_on(booking_date)
+
+
 class Booking(TimeStampedModel):
     table = models.ForeignKey(
         Table,
@@ -37,10 +82,23 @@ class Booking(TimeStampedModel):
     booking_date = models.DateField(
         verbose_name="Дата бронирования",
     )
-    is_cancelled = models.BooleanField(
-        default=False,
-        verbose_name="Отменено",
+    status = models.CharField(
+        max_length=20,
+        choices=BookingStatus.choices,
+        default=BookingStatus.ACTIVE,
+        verbose_name="Статус",
     )
+    booking_key = models.GeneratedField(
+        expression=Concat(
+            Cast("booking_date", output_field=CharField()),
+            Value("-"),
+            Cast("table_id", output_field=CharField()),
+        ),
+        output_field=CharField(max_length=40),
+        db_persist=True,
+    )
+
+    objects = BookingManager()
 
     class Meta:
         ordering = ["booking_date", "id"]
@@ -48,13 +106,12 @@ class Booking(TimeStampedModel):
         verbose_name_plural = "Бронирования"
 
     def __str__(self):
-        status = "Отменено" if self.is_cancelled else "Активно"
         return (
             f"Бронирование #{self.id} | "
             f"{self.table} | "
             f"{self.booking_date} | "
             f"{self.user.name} | "
-            f"{status}"
+            f"{self.get_status_display()}"
         )
 
     @property

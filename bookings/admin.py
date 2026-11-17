@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import Booking, User
+from .models import Booking, BookingStatus, User
+
+
+@admin.action(description="Отменить выбранные бронирования")
+def cancel_selected_bookings(modeladmin, request, queryset):
+    queryset.update(status=BookingStatus.CANCELLED)
 
 
 @admin.register(User)
@@ -17,8 +22,9 @@ class BookingAdmin(admin.ModelAdmin):
         "table",
         "user",
         "booking_date",
-        "is_cancelled",
+        "status",
     )
-    list_filter = ("is_cancelled", "booking_date")
-    search_fields = ("user__name", "user__email")
+    list_filter = ("status", "booking_date")
+    search_fields = ("table__location", "user__name", "user__email")
     ordering = ("booking_date",)
+    actions = (cancel_selected_bookings,)

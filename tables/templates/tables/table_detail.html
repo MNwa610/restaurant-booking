@@ -39,7 +39,7 @@
 <p>
 {{ booking.booking_date }} —
 {{ booking.user.name }} —
-{% if booking.is_cancelled %}отменено{% else %}активно{% endif %}
+{{ booking.get_status_display }}
 </p>
 {% empty %}
 <p>Бронирований нет.</p>

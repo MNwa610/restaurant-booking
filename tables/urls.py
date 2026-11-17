@@ -7,5 +7,10 @@ app_name = "tables"
 urlpatterns = [
     path("", views.tables, name="list"),
     path("available/", views.available_tables, name="available"),
-    path("<int:table_number>/", views.table_detail, name="detail"),
+    path(
+        "<int:table_number>/",
+        views.table_detail_redirect,
+        name="detail_legacy",
+    ),
+    path("<slug:slug>/", views.table_detail, name="detail"),
 ]

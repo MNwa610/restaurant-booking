@@ -8,6 +8,11 @@
 <h1>Статистика бронирований</h1>
 <p>Всего бронирований: {{ summary.total }}</p>
 <p>Отменённых бронирований: {{ summary.cancelled }}</p>
+{% for item in status_counts %}
+<p>{{ item.label }}: {{ item.total }}</p>
+{% empty %}
+<p>Бронирований по статусам нет.</p>
+{% endfor %}
 <p>Столиков: {{ capacity_stats.tables_count }}</p>
 <p>Суммарная вместимость: {{ capacity_stats.sum_capacity }}</p>
 <p>Средняя вместимость: {{ capacity_stats.avg_capacity }}</p>

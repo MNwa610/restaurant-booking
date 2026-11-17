@@ -64,6 +64,10 @@
 ```text
 restaurant-booking/
 ├── bookings/
+│   ├── admin.py
+│   ├── context_processors.py
+│   ├── models.py
+│   ├── migrations/
 │   ├── templates/
 │   │   └── bookings/
 │   │       ├── includes/
@@ -88,6 +92,9 @@ restaurant-booking/
 │   └── views.py
 │
 ├── tables/
+│   ├── admin.py
+│   ├── models.py
+│   ├── migrations/
 │   ├── templates/
 │   │   └── tables/
 │   │       ├── includes/
@@ -112,7 +119,8 @@ restaurant-booking/
 │   ├── bookings.json
 │   ├── tables.json
 │   ├── users.json
-│   └── restaurant_booking.sqlite
+│   ├── restaurant_booking.sqlite
+│   └── restaurant_booking_backup.sqlite
 │
 ├── db/
 │   ├── database.py
@@ -149,7 +157,8 @@ restaurant-booking/
 * `/` – главная страница;
 * `/tables/` – список столиков;
 * `/tables/available/` – поиск свободных столиков на выбранную дату;
-* `/tables/<int:table_number>/` – информация об отдельном столике;
+* `/tables/<slug>/` – информация об отдельном столике
+  (старый адрес `/tables/<номер>/` перенаправляет на слаг);
 * `/bookings/` – список бронирований;
 * `/bookings/statistics/` – статистика бронирований;
 * `/bookings/<int:booking_id>/` – информация об отдельном бронировании.
@@ -220,7 +229,8 @@ context = {
 и состояния бронирования:
 
 ```django
-{% if booking.is_cancelled %}
+{% if booking.status == "cancelled" %}
+{{ booking.get_status_display }}
 ```
 
 ## 7. Фильтры шаблонов
@@ -255,7 +265,7 @@ context = {
 
 ```django
 {% url 'tables:list' %}
-{% url 'tables:detail' table.number %}
+{{ table.get_absolute_url }}
 {% url 'bookings:bookings' %}
 {% url 'bookings:detail' booking.id %}
 ```
@@ -461,7 +471,7 @@ SQL-запросы сохранены в `sql/queries.sql` и включают �
 Страницы, отображающие данные:
 
 * `/tables/` – список столиков;
-* `/tables/<int:table_number>/` – карточка столика;
+* `/tables/<slug>/` – карточка столика;
 * `/bookings/` – активные бронирования;
 * `/bookings/<int:booking_id>/` – карточка бронирования;
 * `/tables/available/` – свободные столики на выбранную дату;
@@ -488,8 +498,9 @@ SQL-запросы сохранены в `sql/queries.sql` и включают �
 * `tables.Table` — первичный ключ `number`, вместимость, расположение.
 * `bookings.User` — имя и email пользователя ресторана
   (это не `django.contrib.auth.User`).
-* `bookings.Booking` — дата, признак отмены,
+* `bookings.Booking` — дата и статус (`BookingStatus`),
   `ForeignKey` на столик и пользователя.
+  На ПР9 статус хранился в `is_cancelled`; с ПР10 см. раздел 20.
 * Абстрактная модель `TimeStampedModel` добавляет `created_at` и `updated_at`.
 
 Связи:
@@ -532,7 +543,7 @@ SQL-запросы сохранены в `sql/queries.sql` и включают �
 Каждое выражение обслуживает страницу интерфейса:
 
 * `Table.objects.all()` и `Booking.objects.select_related("table", "user")` — списки и карточка бронирования;
-* `.filter()` / `.exclude(is_cancelled=True)` — дата, столик, статус;
+* `Booking.objects.active()` / `.cancelled()` / `.for_date()` — дата, столик, статус;
 * `User.objects.get(pk=...)` — проверка пользователя из `request.GET` перед фильтром;
 * `get_object_or_404()` — карточки столика и бронирования;
 * `.filter(location__icontains=...)` и `Q(...) | Q(...)` — поиск;
@@ -543,8 +554,8 @@ SQL-запросы сохранены в `sql/queries.sql` и включают �
 * `.values("location").annotate(...)` — статистика по залам;
 * `.aggregate(Sum, Avg, Min, Max, Count)` — сводка вместимости и бронирований;
 * `.annotate(F("table__number"))` — поля связанной модели в списке бронирований;
-* `.annotate(Count("bookings", filter=Q(bookings__is_cancelled=False)))` — активные брони по столикам;
-* `.exclude(pk__in=Booking.objects.filter(...).values("table_id"))` — свободные столики, отменённые брони не занимают столик;
+* `.annotate(Count("bookings", filter=Q(bookings__status__in=(ACTIVE, COMPLETED))))` — брони по столикам без отменённых;
+* `.exclude(pk__in=Booking.objects.occupied_on(date))` — свободные столики; отменённые брони не занимают столик, завершённые занимают;
 * `Paginator(queryset, 2).get_page()` — некорректный номер страницы не вызывает ошибку.
 
 Выбранные фильтры сохраняются в формах. Ссылки пагинации собираются тегом `{% querystring %}`.

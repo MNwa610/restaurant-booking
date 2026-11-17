@@ -2,7 +2,7 @@ from django.core.paginator import Paginator
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from django.shortcuts import get_object_or_404, render
 
-from bookings.models import Booking, User
+from bookings.models import Booking, BookingStatus, User
 from tables.models import Table
 from tables.views import parse_date
 
@@ -29,14 +29,9 @@ def bookings(request):
     status = request.GET.get("status", "active")
     sort = request.GET.get("sort", "date")
 
-    if booking_date and table_number.isdigit():
-        queryset = queryset.filter(
-            booking_date=booking_date,
-            table__number=int(table_number),
-        )
-    elif booking_date:
-        queryset = queryset.filter(booking_date=booking_date)
-    elif table_number.isdigit():
+    if booking_date:
+        queryset = queryset.for_date(booking_date)
+    if table_number.isdigit():
         queryset = queryset.filter(table__number=int(table_number))
 
     if user_id.isdigit():
@@ -55,9 +50,11 @@ def bookings(request):
         )
 
     if status == "cancelled":
-        queryset = queryset.filter(is_cancelled=True)
+        queryset = queryset.cancelled()
+    elif status == "completed":
+        queryset = queryset.filter(status=BookingStatus.COMPLETED)
     elif status != "all":
-        queryset = queryset.exclude(is_cancelled=True)
+        queryset = queryset.active()
 
     order_by = BOOKING_SORT_FIELDS.get(sort, "booking_date")
     queryset = queryset.order_by(order_by, "table__number", "id")
@@ -106,14 +103,27 @@ def statistics(request):
             table_number=F("number"),
             bookings_count=Count(
                 "bookings",
-                filter=Q(bookings__is_cancelled=False),
+                filter=Q(
+                    bookings__status__in=(
+                        BookingStatus.ACTIVE,
+                        BookingStatus.COMPLETED,
+                    )
+                ),
             ),
         ).order_by("-bookings_count", "number")
     )
     summary = Booking.objects.aggregate(
         total=Count("id"),
-        cancelled=Count("id", filter=Q(is_cancelled=True)),
+        cancelled=Count("id", filter=Q(status=BookingStatus.CANCELLED)),
     )
+    status_counts = list(
+        Booking.objects.values("status")
+        .annotate(total=Count("id"))
+        .order_by("status")
+    )
+    status_labels = dict(BookingStatus.choices)
+    for row in status_counts:
+        row["label"] = status_labels.get(row["status"], row["status"])
     capacity_stats = Table.objects.aggregate(
         avg_capacity=Avg("capacity"),
         min_capacity=Min("capacity"),
@@ -132,6 +142,7 @@ def statistics(request):
         {
             "statistics": statistics_data,
             "summary": summary,
+            "status_counts": status_counts,
             "capacity_stats": capacity_stats,
             "locations": locations,
         },

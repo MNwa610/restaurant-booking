@@ -13,7 +13,7 @@
 Активных бронирований: {{ table.active_bookings|length }}
 </p>
 <a
-href="{% url 'tables:detail' table.number %}"
+href="{{ table.get_absolute_url }}"
 class="btn btn-primary"
 >
 Подробнее

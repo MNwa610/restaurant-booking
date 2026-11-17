@@ -1,4 +1,6 @@
 from django.db import models
+from django.urls import reverse
+from django.utils.text import slugify
 
 
 class TimeStampedModel(models.Model):
@@ -26,6 +28,12 @@ class Table(TimeStampedModel):
     location = models.TextField(
         verbose_name="Расположение",
     )
+    slug = models.SlugField(
+        max_length=50,
+        unique=True,
+        blank=True,
+        verbose_name="Слаг",
+    )
 
     class Meta:
         ordering = ["number"]
@@ -37,3 +45,17 @@ class Table(TimeStampedModel):
             f"Столик N{self.number} "
             f"({self.capacity} мест, {self.location})"
         )
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._build_slug()
+        super().save(*args, **kwargs)
+
+    def _build_slug(self):
+        located = slugify(f"{self.location}-{self.number}")
+        if located and not located.isdigit():
+            return located
+        return f"table-{self.number}"
+
+    def get_absolute_url(self):
+        return reverse("tables:detail", kwargs={"slug": self.slug})

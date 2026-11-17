@@ -53,6 +53,9 @@ value="{{ q }}"
 <option value="cancelled" {% if status == "cancelled" %}selected{% endif %}>
 Отменённые
 </option>
+<option value="completed" {% if status == "completed" %}selected{% endif %}>
+Завершённые
+</option>
 <option value="all" {% if status == "all" %}selected{% endif %}>
 Все
 </option>

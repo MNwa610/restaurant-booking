@@ -57,6 +57,10 @@ def import_users(conn):
 
 
 def import_bookings(conn):
+    # Историческая база ПР7 хранит is_cancelled.
+    # В модели Django это поле Booking.status:
+    # True -> cancelled, False -> active.
+    # Преобразование выполняется в db/import_sqlite_to_orm.py.
     bookings = load_json(BOOKINGS_FILE)
     conn.executemany(
         """

@@ -27,6 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
+RESTAURANT_NAME = "Ресторан"
+
+INTERNAL_IPS = ["127.0.0.1"]
+
 
 # Application definition
 
@@ -52,6 +56,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.insert(
+        0,
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
+
 ROOT_URLCONF = 'restaurant_booking.urls'
 
 TEMPLATES = [
@@ -64,6 +75,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'bookings.context_processors.restaurant_info',
             ],
         },
     },

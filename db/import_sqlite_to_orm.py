@@ -15,7 +15,7 @@ os.environ.setdefault(
 )
 django.setup()
 
-from bookings.models import Booking, User  # noqa: E402
+from bookings.models import Booking, BookingStatus, User  # noqa: E402
 from tables.models import Table  # noqa: E402
 
 SOURCE_DB = BASE_DIR / "data" / "restaurant_booking.sqlite"
@@ -65,7 +65,11 @@ def import_bookings(conn):
                 "table_id": row["table_number"],
                 "user_id": row["user_id"],
                 "booking_date": date.fromisoformat(row["booking_date"]),
-                "is_cancelled": bool(row["is_cancelled"]),
+                "status": (
+                    BookingStatus.CANCELLED
+                    if row["is_cancelled"]
+                    else BookingStatus.ACTIVE
+                ),
             },
         )
 
@@ -93,7 +97,7 @@ def show_relations():
         print(
             f"  #{booking.id}: столик N{booking.table.number}, "
             f"{booking.user.name}, {booking.booking_date}, "
-            f"отменено={booking.is_cancelled}"
+            f"статус={booking.status}"
         )
 
 
